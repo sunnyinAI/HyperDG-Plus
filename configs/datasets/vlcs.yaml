@@ -1,0 +1,5 @@
+dataset: VLCS
+data_dir: data
+holdout_fraction: 0.2
+test_envs: [0]
+num_workers: 8

@@ -1,0 +1,27 @@
+experiment_name: batch2_erm_terraincognita_split2
+seed: 0
+output_dir: experiments/batch2/erm/terraincognita_split2
+device: cuda
+eval_on_start: false
+dataset:
+  config: configs/datasets/terraincognita.yaml
+  data_dir: data
+  test_envs:
+  - 2
+algorithm: hyperdg
+hparams:
+  lr: 5.0e-05
+  curvature_lr: 0.0
+  weight_decay: 0.0
+  grad_clip_norm: 5.0
+  nonlinear_classifier: false
+  checkpoint_freq: 200
+  alpha_curv: 0.0
+  beta_align: 0.0
+  gamma_sharp: 0.0
+  delta_local_flat: 0.0
+  delta_global_flat: 0.0
+  curvature_epsilon: 0.0001
+  n_steps: 5000
+  batch_size: 32
+  single_curvature: false

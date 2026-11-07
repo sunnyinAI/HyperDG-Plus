@@ -1,0 +1,16 @@
+__pycache__/
+*.py[cod]
+/data/
+/reproduced/
+/HyperDG2/logs/
+*.pt
+*.pth
+/paper/source/*.aux
+/paper/source/*.bbl
+/paper/source/*.blg
+/paper/source/*.fdb_latexmk
+/paper/source/*.fls
+/paper/source/*.log
+/paper/source/*.out
+/paper/source/main.pdf
+/paper/source/supplementary.pdf

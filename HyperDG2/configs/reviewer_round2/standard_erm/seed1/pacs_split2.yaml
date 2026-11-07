@@ -1,0 +1,24 @@
+experiment_name: reviewer_round2_standard_erm_pacs_seed1_split2
+seed: 1
+output_dir: HyperDG2/experiments/reviewer_round2/standard_erm/seed1/pacs_split2
+device: cuda
+eval_on_start: false
+dataset:
+  config: configs/datasets/pacs.yaml
+  data_dir: data
+  test_envs:
+  - 2
+algorithm: ERM
+hparams:
+  lr: 5.0e-05
+  weight_decay: 0.0
+  nonlinear_classifier: false
+  data_augmentation: true
+  resnet18: false
+  resnet50_augmix: true
+  class_balanced: false
+  freeze_bn: false
+  resnet_dropout: 0.0
+  checkpoint_freq: 200
+  n_steps: 5000
+  batch_size: 32

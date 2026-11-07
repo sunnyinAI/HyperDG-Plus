@@ -1,0 +1,705 @@
+\documentclass[10pt]{article}
+
+\usepackage[letterpaper,margin=0.72in]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{hyperref}
+\usepackage{longtable}
+\usepackage{microtype}
+\usepackage{multirow}
+\usepackage{pdflscape}
+\usepackage{xcolor}
+
+\hypersetup{colorlinks=true,linkcolor=blue,citecolor=blue,urlcolor=blue}
+
+\title{Supplementary Material\\
+\large A Controlled Evaluation of Curvature-Inspired Scalar Feature Scaling
+for Domain Generalization}
+\author{Sunny Gupta \and Amit Sethi}
+\date{}
+
+\newcommand{\method}{\textsc{HyperDG}}
+\newcommand{\pp}{\,pp}
+\newcommand{\full}{\textsc{FullPerDomain}}
+\newcommand{\erm}{\textsc{StandardERM}}
+\newcommand{\shared}{\textsc{SharedLearnable}}
+\newcommand{\novar}{\textsc{NoVariance}}
+
+\begin{document}
+\maketitle
+\vspace{-1.8em}
+
+\section{Scope and Evidence Status}
+\label{sec:scope}
+
+\paragraph{What the name refers to.}
+\method{} denotes the exact scalar feature-scaling formulation evaluated in
+the paper. It is not a citation to a separate external publication and it is
+not a name for hyperbolic domain generalization in general. The paper and this
+supplement specify the computation directly.
+
+\paragraph{Claim boundary.}
+The implementation performs scalar rescaling of Euclidean features during
+training and unscaled Euclidean linear prediction. It is not a Lorentz or
+Poincar\'e representation, a geodesic classifier, or a SAM inner loop. The
+evidence below therefore addresses the executed scalar package and the need
+for separate source-loader scalars. It does not address hyperbolic
+representation learning in general.
+
+\begin{table}[H]
+\centering
+\caption{Revision evidence inventory. Complete means every planned run reaches
+the end of the declared training schedule and contributes to the reported
+analysis.}
+\label{tab:evidence-status}
+\small
+\begin{tabular}{p{0.27\linewidth}p{0.18\linewidth}p{0.47\linewidth}}
+\toprule
+Analysis & Status & Evidentiary use \\
+\midrule
+Six-condition controlled grid & Complete: 384/384 & Primary evidence:
+six conditions, four datasets, four targets, and four run seeds. \\
+Native DomainBed ERM & Complete: 64/64 & Whole-package utility comparator;
+not a curvature-only causal contrast because the update routes differ. \\
+Shared-learnable source scale & Complete: 64/64 & Direct domain-specificity
+comparison with \novar{}; Frozen is not used as its substitute. \\
+Source-only model selection & Complete & Primary endpoint; held-out target
+accuracy is excluded from the frozen checkpoint score. \\
+Target-clustered inference & Complete & Four targets are per-dataset clusters;
+four datasets are suite clusters. \\
+Post-hoc Poincar\'e projections & Excluded & Visualization only; not evidence
+of manifold-valued training. \\
+Legacy MERU attempts & Incomplete/excluded & Do not constitute a controlled
+genuine-hyperbolic baseline and support no accuracy claim. \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Frozen Revision Protocol}
+\label{sec:protocol}
+
+\subsection{Conditions}
+
+All \method{}-path scale parameters ($a_i$ and the global $a_g$; see
+Section~\ref{sec:audit}) start at zero, so every condition begins with
+$c_i=c_g=\operatorname{softplus}(0)+10^{-4}=\log2+10^{-4}=0.6932472$, a feature
+multiplier of $1/\sqrt{c}=1.2010358$. \textsc{MatchedControl} and
+\textsc{Frozen} set the scale optimizer's learning rate to zero, so $a_i$ and
+$a_g$ never move: $c_i=c_g=0.6932472$ is the fixed value applied at
+\emph{every} update of the run, not only at initialization. \full{},
+\novar{}, and \shared{} instead learn $a_i$ (or, for \shared{}, one shared
+$a$) and $a_g$ from this same zero starting point with the separate scale
+Adam optimizer described below. In a run with one held-out environment,
+per-domain means one scalar for each of three source-loader slots, not four
+persistent dataset-wide domain identities.
+
+Only \erm{}, \full{}, \novar{}, and \shared{} enter the paper's two primary
+suite contrasts (\full{}$-$\erm{} and \novar{}$-$\shared{}, both defined in
+Section~\ref{sec:estimands-inference}). \textsc{MatchedControl} and \textsc{Frozen} are
+secondary, descriptive diagnostics: no contrast reported in this paper treats
+either condition as a primary inferential claim. \textsc{MatchedControl}
+isolates what the \method{} update route costs or gains at fixed, non-learned
+rescaling, before any auxiliary loss is active. \textsc{Frozen} is the
+fixed-scale counterpart of \novar{}, letting learned and fixed scaling be
+compared descriptively under the same non-dispersion auxiliary package; it is
+not a substitute for \shared{}, since it changes learnability rather than
+per-source specificity.
+
+\begin{table}[H]
+\centering
+\caption{Exact identities of the six conditions. Coefficients are
+$(\alpha_{\mathrm{var}},\beta_{\mathrm{align}},\gamma_{\mathrm{norm}},
+\delta_{\mathrm{local}},\delta_{\mathrm{global}})$. Only the \erm{}, \full{},
+\novar{}, and \shared{} rows enter the two primary contrasts;
+\textsc{MatchedControl} and \textsc{Frozen} are descriptive.}
+\label{tab:condition-identities}
+\small
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{p{0.18\linewidth}p{0.21\linewidth}p{0.16\linewidth}p{0.32\linewidth}}
+\toprule
+Condition & Scales & Coefficients & Interpretation \\
+\midrule
+\erm{} & None & n/a & Native concatenated-minibatch DomainBed ERM. \\
+\textsc{MatchedControl} & Three local plus global, all fixed at $0.6932472$ &
+$(0,0,0,0,0)$ & \method{} route with auxiliary losses disabled; fixed feature
+rescaling remains. Descriptive only. \\
+\full{} & Three local plus global, learned &
+$(.2,.5,.05,.1,.1)$ & Complete submitted implementation. \\
+\textsc{Frozen} & Three local plus global, fixed at $0.6932472$ &
+$(0,.5,.05,.1,.1)$ & Non-dispersion auxiliary package with fixed scales.
+Descriptive only. \\
+\novar{} & Three local plus global, learned &
+$(0,.5,.05,.1,.1)$ & Removes only explicit between-scale dispersion from
+\full{}. \\
+\shared{} & One shared local plus separate global, learned &
+$(.2,.5,.05,.1,.1)$ & Dispersion is structurally zero despite $\alpha=.2$;
+clean comparator for \novar{}. \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Data, targets, and training}
+
+\begin{table}[H]
+\centering
+\caption{Named held-out targets. Every target is evaluated with seeds 0--3.}
+\label{tab:target-map}
+\small
+\begin{tabular}{lllll}
+\toprule
+Dataset & Target 0 & Target 1 & Target 2 & Target 3 \\
+\midrule
+PACS & ArtPainting & Cartoon & Photo & Sketch \\
+VLCS & Caltech101 & LabelMe & SUN09 & VOC2007 \\
+OfficeHome & Art & Clipart & Product & RealWorld \\
+TerraIncognita & L100 & L38 & L43 & L46 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+All conditions use the same environment partitions and
+deterministic seed-dependent 80/20 splits, data augmentation,
+\texttt{timm} \texttt{resnet50.ram\_in1k} ImageNet weights, 2,048-dimensional
+features, a biased linear classifier, batch size 32 per source, 5,000 updates,
+Adam network learning rate $5\times10^{-5}$, zero weight decay, and evaluation
+every 200 updates plus update 4999. Seeds change the split, initialization,
+minibatch order, and augmentation randomness. BatchNorm is active and dropout
+is zero. Learned scale parameters use Adam at $10^{-4}$; the \method{} route
+clips network and scale gradient norms to 5.
+
+\emph{Native DomainBed ERM} means the unmodified upstream DomainBed
+\texttt{ERM} class, run inside this project's identical data, split,
+augmentation, timm-ResNet-50, and source-only-selection harness: it
+concatenates the three source minibatches into one 96-example batch, computes
+one cross-entropy loss, and takes one Adam step with one optimizer and no
+gradient clipping. ``Native'' describes the update rule and objective, not a
+claim that the surrounding training/evaluation code is an untouched upstream
+DomainBed installation.
+
+Per training step, the \method{} route calls the feature extractor six times:
+three source-minibatch forward passes (with gradients) build the training
+objective in Equation~(2) of the main paper, and, after the optimizer step,
+three further forward passes under \texttt{torch.no\_grad()} recompute
+training accuracy for logging. \texttt{no\_grad()} disables gradient
+tracking only; it does \emph{not} switch the model to \texttt{eval()}, and
+the training loop never calls \texttt{eval()} during an update. All six
+forward passes therefore run with the model in ordinary training mode, and
+BatchNorm's running mean, running variance, and batch counter update exactly
+as they would for any other training-mode forward pass -- including the three
+no-gradient diagnostic passes. Native ERM instead calls the feature extractor
+once per step, on the concatenated 96-example batch, so it updates BatchNorm
+statistics from one training-mode forward pass rather than \method{}'s six.
+This asymmetry, together with the separate scale optimizer and gradient
+clipping described above, is why \full{}$-$\erm{} is a complete-package
+comparison rather than an isolated curvature effect. Both sides of
+\novar{}$-$\shared{} use the identical \method{} route, so this asymmetry
+cancels out of that contrast.
+
+\subsection{Target-excluding checkpoint selection}
+
+For method $m$, dataset $j$, held-out target $d$, run seed $s$, source
+environment $r$, and checkpoint $t$, let $V_{mjdsrt}$ be source
+\texttt{out}-split accuracy. The selected checkpoint is
+\begin{equation}
+t^*_{mjds}=\arg\max_t\frac{1}{3}\sum_{r\ne d}V_{mjdsrt},
+\end{equation}
+with earliest-checkpoint tie breaking. The held-out target key is not used in
+this calculation; its accuracy is read only after $t^*$ is fixed. The trainer
+logged target values at every checkpoint, so we do not make the stronger claim
+that target curves never existed. Source validation inherits stochastic
+augmentation and is evaluated once per logged checkpoint.
+
+\subsection{Estimand}
+\label{sec:estimand}
+
+Every suite-level number in this supplement and the main paper is a claim
+about the equal-weighted macro over exactly PACS, VLCS, OfficeHome, and
+TerraIncognita under this protocol. It is not a claim about a population or
+superpopulation of DG tasks that these four benchmarks are sampled from: the
+suite was chosen for heterogeneous shift type (style, acquisition, context,
+and camera location; Section~\ref{sec:protocol}), not as a random draw from a
+larger task distribution. Figure~1 of the main paper states this explicitly
+because the suite-level interval, sign-flip test, and TOST below use the four
+dataset effects as inferential clusters without implying that conclusions
+transfer to DG tasks outside this fixed suite.
+
+\subsection{Estimands and inference}
+\label{sec:estimands-inference}
+
+For a treatment $A$ and comparator $B$, define
+\begin{equation}
+g_{jds}=Y_{Ajds}-Y_{Bjds},\qquad
+\bar g_{jd}=\frac14\sum_sg_{jds},\qquad
+\Delta_j=\frac14\sum_d\bar g_{jd}.
+\end{equation}
+Seeds are averaged within target first ($\bar g_{jd}$), and targets are
+averaged within dataset second ($\Delta_j$). The suite-level procedures below
+consume only the resulting four dataset means $\Delta_j$; they do not
+separately repropagate within-target seed variance or between-target
+variance into the suite-level interval or test. Those lower-level components
+are real and are reported descriptively -- per-target effects in
+Table~\ref{tab:target-effects}, and the target/seed/residual decomposition in
+Table~\ref{tab:effect-variability} -- but they contribute to the suite-level
+uncertainty only through the four dataset means they produce, not as an
+additional variance term added at the suite level.
+
+Inference within dataset $j$ uses the four $\bar g_{jd}$ values, not the 16
+seed-by-target cells. We enumerate all $2^4=16$ target-level sign
+assignments for an exact two-sided sign-flip test and separately report a
+$t_3$ interval. The sign-flip test is exact conditional on treating the four
+target-level signs as exchangeable under the joint no-effect null, i.e.\ that
+all 16 sign patterns are equally likely if each $\bar g_{jd}$ is symmetric
+about zero under the null. This is a working symmetry assumption suited to a
+four-cluster benchmark suite; it does not assume the datasets were randomly
+sampled or randomly assigned, and it is not a test of whether dataset-level
+effects cancel under a suite-macro-only null. The minimum attainable
+two-sided exact $p$-value is therefore .125 with four clusters. The suite
+macro averages the four $\Delta_j$ values and uses the four datasets as
+clusters. The two primary suite contrasts form a Holm-2 family; eight
+per-dataset contrasts are a separate sensitivity family.
+
+We declare the exact sign-flip test with Holm correction as the primary
+inferential procedure for both suite-level difference claims. The $t_3$
+interval and the four-cluster bootstrap sensitivity are secondary: they are
+working-model summaries that lean on approximate normality or resampling
+validity with only four clusters, and they do not override the primary
+result when the two disagree, as they do for \full{}$-$\erm{}
+(Table~\ref{tab:primary-suite}: $t_3$ 95\% CI excludes zero, exact $p=.125$,
+Holm $p=.250$).
+
+The revision-stage SESOI is $\pm1\pp$, selected after the originally submitted
+results were known but before the 128 added ERM/shared runs completed.
+Equivalence requires the clustered 90\% interval to lie wholly inside that
+margin. Margins of $\pm0.5$ and $\pm2\pp$ are sensitivities. TOST, like the
+$t_3$ interval, is a secondary working-model summary conditional on the same
+fixed four-dataset macro (Section~\ref{sec:estimand}); failure to pass TOST is
+inconclusive, not evidence of nonequivalence, and a pass supports equivalence
+only for that fixed-suite macro.
+
+\section{Complete Source-Selected Results}
+\label{sec:complete-results}
+
+\subsection{Six-condition summary with separated variability}
+
+Table~\ref{tab:six-condition} separates between-target SD from the root-mean
+square within-target run-seed SD. The latter combines split, initialization,
+minibatch-order, and augmentation randomness; it is not a pure optimization
+seed SD.
+
+\begin{table}[H]
+\centering
+\caption{Source-selected accuracy and two distinct variability components.
+Accuracy is the equal-target macro mean.}
+\label{tab:six-condition}
+\resizebox{\textwidth}{!}{%
+\input{revision_assets/latex/six_condition_source_selected.tex}}
+\end{table}
+
+Across the 24 condition-by-dataset cells, between-target SD ranges from
+$4.60$ to $15.07\pp$, while within-target run-seed SD (RMS) ranges from
+$1.19$ to $4.73\pp$. Pooling these sources into one SD would obscure the
+dominant target-difficulty variation in several datasets.
+
+\subsection{Every target and all four run seeds}
+
+\begin{landscape}
+\setlength{\tabcolsep}{4pt}
+\scriptsize
+\input{revision_assets/latex/target_level_accuracies.tex}
+\end{landscape}
+
+\noindent
+The preceding table is the complete 384-cell accuracy inventory: six
+conditions, four datasets, four named targets, and four seeds. Values are the
+held-out target \texttt{out}-split accuracies at the source-selected
+checkpoint. No target or seed is omitted.
+
+\section{Primary Contrasts and Small-Cluster Inference}
+\label{sec:inference}
+
+\subsection{Suite and per-dataset estimates}
+
+\begin{table}[H]
+\centering
+\caption{Primary suite-macro analyses. Exact tests flip the four dataset
+effects; Holm adjusts the two exact $p$-values. TOST uses the revision-stage
+$\pm1\pp$ margin.}
+\label{tab:primary-suite}
+\small
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{lrrrrrr}
+\toprule
+Contrast & Effect & 95\% CI & Exact $p$ & Holm $p$ & 90\% CI & TOST $p$ \\
+\midrule
+\full{}$-$\erm{} & $-1.61$ & $[-3.17,-0.04]$ & .125 & .250 &
+$[-2.77,-0.45]$ & .848 \\
+\novar{}$-$\shared{} & $-0.13$ & $[-0.53,0.27]$ & .375 & .375 &
+$[-0.43,0.17]$ & .003 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[H]
+\centering
+\caption{Per-dataset target-clustered sensitivities. Holm adjusts these eight
+exact tests as a sensitivity family. No row establishes equivalence within
+$\pm1\pp$.}
+\label{tab:primary-datasets}
+\scriptsize
+\setlength{\tabcolsep}{3.5pt}
+\begin{tabular}{llrrrrrr}
+\toprule
+Contrast & Dataset & Effect & 95\% CI & Exact $p$ & Holm $p$ & 90\% CI & TOST $p$ \\
+\midrule
+\full{}$-$\erm{} & PACS & $-1.01$ & $[-2.88,0.86]$ & .250 & 1.000 & $[-2.39,0.37]$ & .506 \\
+ & VLCS & $-0.77$ & $[-3.92,2.39]$ & .500 & 1.000 & $[-3.10,1.57]$ & .415 \\
+ & OfficeHome & $-1.69$ & $[-4.21,0.82]$ & .250 & 1.000 & $[-3.55,0.17]$ & .778 \\
+ & TerraIncognita & $-2.96$ & $[-9.18,3.26]$ & .375 & 1.000 & $[-7.56,1.64]$ & .805 \\
+\midrule
+\novar{}$-$\shared{} & PACS & $-0.27$ & $[-1.47,0.94]$ & .500 & 1.000 & $[-1.16,0.63]$ & .074 \\
+ & VLCS & $-0.39$ & $[-1.46,0.68]$ & .375 & 1.000 & $[-1.18,0.40]$ & .084 \\
+ & OfficeHome & $0.19$ & $[-1.68,2.06]$ & .875 & 1.000 & $[-1.20,1.57]$ & .130 \\
+ & TerraIncognita & $-0.05$ & $[-4.49,4.39]$ & .875 & 1.000 & $[-3.33,3.23]$ & .273 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The suite $t_3$ interval for \full{}$-$\erm{} excludes zero, while the exact
+four-dataset test is $p=.125$ and Holm-adjusted $p=.250$. We retain both
+results: the parametric interval summarizes compatible cross-dataset effects,
+whereas the exact test exposes the resolution of four clusters. We do not
+claim an adjusted difference. All four dataset point estimates favor ERM, and
+equivalence of the packages is not demonstrated.
+
+For \novar{}$-$\shared{}, the source-selected suite macro is $-0.13\pp$ with 90\%
+CI $[-0.43,0.17]$. It passes the declared $\pm1\pp$ TOST ($p=.003$). No
+individual dataset passes a $\pm1\pp$ equivalence test, so the conclusion is
+restricted to the equal-dataset/equal-target macro estimand.
+
+\subsection{Named-target effects}
+
+\begin{table}[H]
+\centering
+\caption{Mean paired effects after averaging the four paired run-seed
+differences within target. Run-seed-pair SD is descriptive.}
+\label{tab:target-effects}
+\scriptsize
+\resizebox{\textwidth}{!}{%
+\input{revision_assets/latex/primary_target_effects.tex}}
+\end{table}
+
+\subsection{Paired-effect variability decomposition}
+
+\begin{table}[H]
+\centering
+\caption{Descriptive decomposition of each primary paired effect. It keeps
+target, run-seed, and interaction variation distinct; it is not an additional
+inferential test.}
+\label{tab:effect-variability}
+\small
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{lrrrrr}
+\toprule
+Dataset & Mean effect & Target SD & Seed SD & Within-target seed SD & Residual SD \\
+\midrule
+\multicolumn{6}{l}{\full{}$-$\erm{}} \\
+PACS & $-1.01$ & 1.17 & 0.67 & 3.36 & 3.80 \\
+VLCS & $-0.77$ & 1.98 & 0.54 & 1.47 & 1.58 \\
+OfficeHome & $-1.69$ & 1.58 & 1.03 & 1.90 & 1.84 \\
+TerraIncognita & $-2.96$ & 3.91 & 3.73 & 6.20 & 5.71 \\
+\midrule
+\multicolumn{6}{l}{\novar{}$-$\shared{}} \\
+PACS & $-0.27$ & 0.76 & 1.70 & 2.88 & 2.69 \\
+VLCS & $-0.39$ & 0.67 & 1.08 & 1.78 & 1.63 \\
+OfficeHome & $0.19$ & 1.18 & 1.20 & 2.17 & 2.08 \\
+TerraIncognita & $-0.05$ & 2.79 & 1.21 & 4.41 & 4.90 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Equivalence-margin sensitivity}
+
+\begin{table}[H]
+\centering
+\caption{Suite-macro TOST sensitivity at $\pm0.5$, $\pm1$, and $\pm2\pp$.
+Only \novar{}$-$\shared{} at $\pm1\pp$ is the declared revision-stage equivalence
+analysis; the other rows are sensitivities. Dataset-level $\pm1\pp$ results
+are in Table~\ref{tab:primary-datasets}.}
+\label{tab:equivalence-sensitivity}
+\small
+\begin{tabular}{lrrrrl}
+\toprule
+Contrast & Margin & Effect & 90\% CI & TOST $p$ & Conclusion \\
+\midrule
+\full{}$-$\erm{} & $\pm0.5$ & $-1.61$ & $[-2.77,-0.45]$ & .945 & Not demonstrated \\
+ & $\pm1.0$ & $-1.61$ & $[-2.77,-0.45]$ & .848 & Not demonstrated \\
+ & $\pm2.0$ & $-1.61$ & $[-2.77,-0.45]$ & .242 & Not demonstrated \\
+\midrule
+\novar{}$-$\shared{} & $\pm0.5$ & $-0.13$ & $[-0.43,0.17]$ & .031 & Equivalent \\
+ & $\pm1.0$ & $-0.13$ & $[-0.43,0.17]$ & .003 & Equivalent \\
+ & $\pm2.0$ & $-0.13$ & $[-0.43,0.17]$ & $<.001$ & Equivalent \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Checkpoint-Selection Sensitivity}
+\label{sec:checkpoint}
+
+\begin{table}[H]
+\centering
+\caption{Source-selected versus update-4999 target accuracy. Selection uses
+only mean source \texttt{out} accuracy.}
+\label{tab:checkpoint-sensitivity}
+\scriptsize
+\resizebox{\textwidth}{!}{%
+\input{revision_assets/latex/checkpoint_sensitivity.tex}}
+\end{table}
+
+Source selection exceeds final-step reporting in 20 of 24
+condition-by-dataset cells, with an average change of $+0.97\pp$. At update
+4999 the \novar{}$-$\shared{} suite effect is $-0.32\pp$ with 90\% CI
+$[-1.13,0.50]$ and TOST $p=.072$. Thus final-step equivalence is not
+established, and the paper's equivalence claim is explicitly endpoint-specific.
+
+\subsection{Held-out target in-split sensitivity}
+
+\begin{table}[H]
+\centering
+\caption{Source-selected held-out target \texttt{in}-split sensitivity. These
+values never enter checkpoint selection.}
+\label{tab:target-in}
+\small
+\resizebox{\textwidth}{!}{%
+\input{revision_assets/latex/target_in_sensitivity.tex}}
+\end{table}
+
+\section{Implementation Audit}
+\label{sec:audit}
+
+\subsection{Scalar training path and unscaled prediction}
+
+For local source slot $i$, the update path uses
+\begin{equation}
+c_i=\operatorname{softplus}(a_i)+10^{-4},\qquad
+z_i=h_\theta(x_i)/\sqrt{c_i},
+\end{equation}
+and the supervised loss classifies $z_i$. A separate scalar $c_g$ is used for
+the global disagreement term. By contrast, the prediction method is equivalent
+to
+\begin{equation}
+\operatorname{predict}(x)=W h_\theta(x)+b.
+\end{equation}
+No local or global scale is applied to target inference or to logged checkpoint
+accuracy. The learned values can influence training gradients, but they do not
+define a target-domain hyperbolic prediction rule.
+
+\subsection{Alignment-loss weights}
+
+The domain-mean alignment term in the main paper's Equation~(3) is
+\begin{equation}
+\mathcal L_{\mathrm{align}}=\frac13\sum_i\Big\|\bar z_i-\sum_jw_j\bar
+z_j\Big\|_2^2,
+\end{equation}
+where $\bar z_i=\frac{1}{|B_i|}\sum_{k\in B_i}z_{i,k}$ averages the scaled
+features over the $|B_i|=32$ examples in source minibatch $i$, and
+$w_j=B_j/(\sum_kB_k+10^{-8})$ weights each domain mean by its minibatch size
+(the $10^{-8}$ term is a numerical-stability offset in the denominator). Every
+source minibatch has 32 examples in this protocol, so $w_j=1/3$ for all
+three source slots and $\sum_jw_j\bar z_j$ is simply the unweighted mean of
+the three domain means.
+
+\subsection{Inactive local-gradient regularizer}
+
+The forward pass indexes the transformed vector of scales and uses that view to
+construct $z_i$. The local diagnostic separately indexes the underlying
+parameter vector and asks for a gradient with respect to the new view.
+That view is not the tensor used in the forward graph. With
+\texttt{allow\_unused=True}, automatic differentiation returns
+\texttt{None}; the implementation converts it to zero. Consequently,
+\begin{equation}
+\mathcal L_{\mathrm{local}}^{\mathrm{executed}}=0
+\end{equation}
+despite the configured coefficient $\delta_{\mathrm{local}}=.1$ in the
+non-control conditions. The logged local term is identically zero in every
+relevant completed run. This is an implementation defect and is disclosed
+rather than silently repaired only for the added arms.
+
+\subsection{Algebraic cancellation in the norm proxy}
+
+The implementation computes
+\begin{equation}
+\mathcal L_{\mathrm{norm},i}
+=c_i\,\operatorname{Var}\!\left(\|h_i/\sqrt{c_i}\|_2\right)
+=\operatorname{Var}(\|h_i\|_2),
+\end{equation}
+apart from an inactive clamp at the tested values, where
+$\operatorname{Var}(\cdot)$ is the population variance (divisor $|B_i|=32$,
+PyTorch \texttt{unbiased=False}) of the 32 per-example scaled-feature norms
+$\|h_{i,k}/\sqrt{c_i}\|_2$, $k\in B_i$, taken within source minibatch $i$
+before the three per-domain values are averaged. Because $\sqrt{c_i}$ is the
+same constant for every example in minibatch $i$, it factors out of the
+variance and the multiplying $c_i$ cancels it exactly, leaving
+$\operatorname{Var}(\|h_i\|_2)$. The term can regularize the
+encoder through feature gradients, but its value does not depend on $c_i$, so
+it cannot identify $c_i$ and is not a curvature sharpness quantity. It also
+performs no parameter perturbation or inner maximization and therefore is not
+SAM.
+
+\subsection{Source-loader indexing}
+
+With target environment $d$ held out, loader slots enumerate the remaining
+environment indices in sorted order. For example, PACS target Cartoon removes
+environment 1, so slots 0, 1, and 2 correspond to ArtPainting, Photo, and
+Sketch. When a different target is held out, that mapping changes. A trajectory
+label such as slot 1 therefore cannot be treated as one semantic domain across
+all leave-one-domain-out runs. The revised trajectory rendering writes the
+named source mapping in every panel and summarizes all four seeds.
+
+\IfFileExists{revision_assets/figures/curvature_scale_trajectories_named_all_seeds.pdf}{%
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{revision_assets/figures/curvature_scale_trajectories_named_all_seeds.pdf}
+\caption{Learned local-scale trajectories for \full{} and \novar{}, aggregated
+over all four run seeds and labeled by the named source represented by each
+loader slot. Bands are descriptive mean $\pm$ SD over 12 overlapping
+target-context/run-seed observations per named source and checkpoint, not
+independent confidence intervals. The plotted positive values are Euclidean
+feature scales, not learned sectional curvatures.}
+\label{fig:scale-trajectories}
+\end{figure}
+}{}
+
+\begin{table}[H]
+\centering
+\caption{Final within-run range across the three learned local scales. Each
+cell gives the mean range over 16 target/seed runs followed by the maximum
+range. This all-seed summary replaces the earlier seed-0-only diagnostic.}
+\label{tab:scale-spread}
+\small
+\begin{tabular}{lrr}
+\toprule
+Dataset & \novar{} mean / max & \full{} mean / max \\
+\midrule
+PACS & 0.003837 / 0.005934 & 0.002667 / 0.004499 \\
+VLCS & 0.003169 / 0.006600 & 0.002475 / 0.004947 \\
+OfficeHome & 0.001482 / 0.002970 & 0.001445 / 0.002477 \\
+TerraIncognita & 0.006020 / 0.010730 & 0.004476 / 0.008534 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{SharedLearnable and global-scale trajectories}
+\label{sec:shared-trajectories}
+
+Figure~\ref{fig:scale-trajectories} above shows only \full{} and \novar{},
+since those are the two conditions with three named per-source local scales.
+\shared{} has a single learned local scale by construction, so it cannot be
+decomposed by named source; to compare it against \novar{} on the same axis,
+we summarize \novar{}'s three per-run local scales by their per-run mean. This
+mean is a descriptive summary constructed only for this comparison, not a new
+inferential estimand.
+
+\IfFileExists{revision_assets/figures/curvature_scale_trajectories_shared_vs_novariance.pdf}{%
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{revision_assets/figures/curvature_scale_trajectories_shared_vs_novariance.pdf}
+\caption{Local-scale (\novar{}'s per-run mean of three source-loader-slot
+values vs.\ \shared{}'s single value) and global-scale trajectories,
+aggregated over all four held-out targets and four run seeds (mean $\pm$ SD,
+$n=16$ runs per dataset and checkpoint). Both conditions start every scale at
+$0.693247$ (dotted line). Descriptively, \shared{}'s single local and global
+scales move further from this initial value than \novar{}'s per-run mean
+local scale does, on all four datasets; we do not treat this as evidence for
+or against either parameterization; it is not one of the paper's two primary
+contrasts, and Table~\ref{tab:primary-suite} already reports the
+performance-based \novar{}$-$\shared{} equivalence result that is this
+comparison's inferential counterpart.}
+\label{fig:shared-vs-novar-trajectories}
+\end{figure}
+}{}
+
+\subsection{BatchNorm and optimizer routes}
+
+BatchNorm is not frozen. The \method{} update processes the three source
+minibatches separately, then performs an additional no-gradient prediction
+pass for a training diagnostic while remaining in train mode. Native ERM
+concatenates source minibatches and performs one feature-extractor pass. The
+routes therefore update running statistics differently. HyperDG also uses
+separate Adam optimizers for network and scale parameters and clips both
+gradient norms; native ERM retains its unmodified single optimizer without
+that clipping. These differences are part of the treatment in
+\full{}$-$\erm{}, which is why the paper calls it a package-utility comparison.
+
+\section{Learning-Curve Diagnostics}
+\label{sec:curves}
+
+Target curves are generated after training for diagnosis and never enter the
+selection function. Cross markers indicate checkpoints selected solely by mean
+stochastic source-validation accuracy.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.49\textwidth]{revision_assets/figures/learning_curves_by_target_pacs.pdf}
+\hfill
+\includegraphics[width=0.49\textwidth]{revision_assets/figures/learning_curves_by_target_vlcs.pdf}
+\caption{PACS and VLCS learning curves by named held-out target. Curves are
+descriptive; checkpoint selection uses only source-validation accuracy.}
+\label{fig:curves-pacs-vlcs}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.49\textwidth]{revision_assets/figures/learning_curves_by_target_officehome.pdf}
+\hfill
+\includegraphics[width=0.49\textwidth]{revision_assets/figures/learning_curves_by_target_terraincognita.pdf}
+\caption{OfficeHome and TerraIncognita learning curves by named held-out
+target.}
+\label{fig:curves-office-terra}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.86\textwidth]{revision_assets/figures/source_selected_steps.pdf}
+\caption{Distribution of source-selected checkpoint steps by condition and
+dataset.}
+\label{fig:selected-steps}
+\end{figure}
+
+\section{Why the Existing Geometry Diagnostics Are Excluded}
+\label{sec:excluded}
+
+\begin{table}[H]
+\centering
+\caption{Disposition of geometry-related analyses outside the 384-run
+controlled matrix.}
+\label{tab:excluded}
+\small
+\begin{tabular}{p{0.26\linewidth}p{0.24\linewidth}p{0.42\linewidth}}
+\toprule
+Analysis & What it computes & Why it supports no main claim \\
+\midrule
+Post-hoc Poincar\'e projection & Maps already trained Euclidean features for a
+two-dimensional visualization & Does not train a hyperbolic encoder or
+classifier; projection appearance cannot validate learned curvature. \\
+Legacy MERU adaptation & Partial attempt to add a Lorentz-style comparison &
+Run grid is incomplete and not protocol-matched; it cannot answer the
+reviewer's genuine-hyperbolic request. \\
+Old seed-0 shared runs & One shared scalar in a mixed software environment &
+Incomplete and environment-mismatched; replaced by all 64 fresh
+\shared{} runs. \\
+Frozen scales & Fixed scalars with other auxiliary terms active & Tests
+learnability, not one learned shared scale; not used for domain specificity. \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+A valid genuine-hyperbolic extension would implement a manifold-valued
+Poincar\'e or Lorentz representation and appropriate classifier under the same
+splits, seeds, backbone, budget, and target-excluding selector. It would need
+fixed- and learned-curvature controls and the same target-clustered analysis.
+No result in the current study meets that definition, so the paper makes no
+claim about such methods.
+
+\end{document}

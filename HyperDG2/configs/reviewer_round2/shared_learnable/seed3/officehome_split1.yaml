@@ -1,0 +1,33 @@
+experiment_name: reviewer_round2_shared_learnable_officehome_seed3_split1
+seed: 3
+output_dir: HyperDG2/experiments/reviewer_round2/shared_learnable/seed3/officehome_split1
+device: cuda
+eval_on_start: false
+dataset:
+  config: configs/datasets/officehome.yaml
+  data_dir: data/officehome_clean
+  test_envs:
+  - 1
+algorithm: hyperdg
+hparams:
+  lr: 5.0e-05
+  weight_decay: 0.0
+  nonlinear_classifier: false
+  data_augmentation: true
+  resnet18: false
+  resnet50_augmix: true
+  class_balanced: false
+  freeze_bn: false
+  resnet_dropout: 0.0
+  checkpoint_freq: 200
+  n_steps: 5000
+  batch_size: 32
+  curvature_lr: 0.0001
+  grad_clip_norm: 5.0
+  alpha_curv: 0.2
+  beta_align: 0.5
+  gamma_sharp: 0.05
+  delta_local_flat: 0.1
+  delta_global_flat: 0.1
+  curvature_epsilon: 0.0001
+  single_curvature: true

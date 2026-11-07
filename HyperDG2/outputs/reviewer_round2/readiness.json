@@ -1,0 +1,21 @@
+{
+  "complete_runs": 384,
+  "expected_runs": 384,
+  "missing_runs": 0,
+  "conditions_complete": {
+    "standard_erm": 64,
+    "matched_control": 64,
+    "full_per_domain": 64,
+    "frozen": 64,
+    "no_variance": 64,
+    "shared_learnable": 64
+  },
+  "source_selection_target_keys_used": false,
+  "source_selection_rule": "maximize mean env*_out_acc over env != held-out target; break ties by earliest step",
+  "per_dataset_inference_cluster": "held-out target domain",
+  "suite_inference_cluster": "benchmark dataset",
+  "primary_multiplicity_family": "two source-selected suite contrasts with Holm correction",
+  "run_seed_components": "data_split+initialization+minibatch_order+augmentation",
+  "primary_sesoi_pp": 1.0,
+  "sesoi_timing": "frozen_during_revision_before_added_grid_completed"
+}

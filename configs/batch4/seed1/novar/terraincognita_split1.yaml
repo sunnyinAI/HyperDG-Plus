@@ -1,0 +1,27 @@
+experiment_name: batch4_seed1_novar_terraincognita_split1
+seed: 1
+output_dir: experiments/batch4/seed1/novar/terraincognita_split1
+device: cuda
+eval_on_start: false
+dataset:
+  config: configs/datasets/terraincognita.yaml
+  data_dir: data
+  test_envs:
+  - 1
+algorithm: hyperdg
+hparams:
+  lr: 5.0e-05
+  curvature_lr: 0.0001
+  weight_decay: 0.0
+  grad_clip_norm: 5.0
+  nonlinear_classifier: false
+  checkpoint_freq: 200
+  alpha_curv: 0.0
+  beta_align: 0.5
+  gamma_sharp: 0.05
+  delta_local_flat: 0.1
+  delta_global_flat: 0.1
+  curvature_epsilon: 0.0001
+  n_steps: 5000
+  batch_size: 32
+  single_curvature: false

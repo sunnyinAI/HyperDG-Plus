@@ -1,0 +1,73 @@
+{
+  "python_version": "3.10.19",
+  "packages": {
+    "torch": "2.6.0+cu124",
+    "torchvision": "0.21.0+cu124",
+    "timm": "1.0.24",
+    "numpy": "1.26.4",
+    "pandas": "2.3.3",
+    "scipy": "1.15.3",
+    "yaml": "6.0.1",
+    "matplotlib": "3.10.7"
+  },
+  "torch_cuda_version": "12.4",
+  "cudnn_version": 91900,
+  "backbone_resolution": {
+    "hparam_key": "resnet50_augmix",
+    "hparam_value": true,
+    "effective_timm_model": "resnet50.ram_in1k",
+    "note": "The code first constructs torchvision ResNet-50, then replaces it with the timm model."
+  },
+  "pretrained_artifacts": {
+    "timm_resnet50_ram_in1k": {
+      "bytes": 102469840,
+      "sha256": "2bba9aa7bf8ba172d88f63f85ffac2e5a84671c80c3e73e8aecd42f78721e4d1"
+    },
+    "torchvision_resnet50_imagenet1k_v1_constructed_then_replaced": {
+      "bytes": 102530333,
+      "sha256": "0676ba61b6795bbe1773cffd859882e5e297624d384b6993f7c9e683e722fb8a"
+    }
+  },
+  "datasets": {
+    "pacs": {
+      "file_count": 9991,
+      "total_bytes": 191395496,
+      "files_per_domain": {
+        "art_painting": 2048,
+        "cartoon": 2344,
+        "photo": 1670,
+        "sketch": 3929
+      }
+    },
+    "vlcs": {
+      "file_count": 10725,
+      "total_bytes": 3869087709,
+      "files_per_domain": {
+        "Caltech101": 1415,
+        "LabelMe": 2652,
+        "SUN09": 3282,
+        "VOC2007": 3376
+      }
+    },
+    "officehome": {
+      "file_count": 15588,
+      "total_bytes": 1181016963,
+      "files_per_domain": {
+        "Art": 2427,
+        "Clipart": 4365,
+        "Product": 4439,
+        "Real_World": 4357
+      }
+    },
+    "terraincognita": {
+      "file_count": 24788,
+      "total_bytes": 2810591105,
+      "files_per_domain": {
+        "location_100": 4879,
+        "location_38": 9767,
+        "location_43": 4020,
+        "location_46": 6122
+      }
+    }
+  }
+}
